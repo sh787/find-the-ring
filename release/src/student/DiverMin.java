@@ -105,7 +105,15 @@ public class DiverMin implements SewerDiver {
 	 * the exit. */
 	@Override
 	public void flee(FleeState state) {
-    throw new NotImplementedError();
+		List<Node> sPath = a5.GraphAlgorithms.shortestPath(state.currentNode(), state.getExit());
+		boolean flag =false; 
+		for (Node n: sPath) {
+			if (flag == true ) {
+				state.moveTo(n);
+			} else {
+				flag = true;
+			}
+		}
 	}
 
 }
