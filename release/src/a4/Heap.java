@@ -2,285 +2,229 @@ package a4;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
 import java.util.NoSuchElementException;
+
 import org.junit.jupiter.api.Test;
 
-import junit.framework.AssertionFailedError;
-
-public class Heap<E, P> implements PriorityQueue<E, P>{
+public class Heap<E, P> implements PriorityQueue<E, P> {
+	private final Comparator<? super P> cmp;
 	
-	//store the data of the heap in an ArrayList
-	private ArrayList<E> data;
-	
-	//the comparator for the priority of the elements
-	private Comparator<P> comparator;
-	
-	//the HashMap storing the location of each element
-	private HashMap<E, Integer> locationMap;
-	
-	//the HashMap storing the priority of the element at given index
-	private HashMap<Integer, P> priorityMap;
-
-	public Heap(Comparator<P> comparator) {
-		this.comparator = comparator;
-		this.data = new ArrayList<E>();
-		locationMap = new HashMap<E, Integer>();
-		priorityMap = new HashMap<Integer, P>();
-	}
-	
-	/**
-	 * Added this method to Group 5's Heap implementation. 
-	 * Returns whether the Heap contains Element e.
-	 */
-	public boolean contains(E e) {
-		return locationMap.containsKey(e);
-	}
-	
-	/**
-	 * Added this method to Group 5's Heap implementation. 
-	 * Returns the Priority of Element e.
-	 */
-	public P getPriority (E e) {
-		if(!(this.data.contains(e)))
-			throw new NoSuchElementException("Heap does not contain e.");
-		return priorityMap.get(locationMap.get(e));
-	}
-	
-	/** Added this method to Group 5's Heap implementation.
-	 * Returns string of Heap in the format of (Element, Priority)
-	 */
-	public String toString() {
-		String prt = "";
-		for (E e: data) {
-			prt += "(" + e + ", " + priorityMap.get(locationMap.get(e)) + ")";
+	private class Node implements Comparable<Node> {
+		E value;
+		P priority;
+		Node(E value, P priority) {
+			this.value = value; this.priority = priority;
 		}
 		
-		return prt;
+		public int compareTo(Node other) {
+			return cmp.compare(this.priority, other.priority);
+		}
+		
+		public String toString() {
+			return value + " (" + priority + ")";
+		}
+	}
+	
+	/** invariant: is a heap. */
+	private ArrayList<Node>     heap;
+	
+	/** invariant: heap[index[o]].value.equals(o) */
+	private HashMap<E, Integer> index;
+	
+	public Heap(Comparator<P> cmp) {
+		this.cmp   = cmp;
+		this.heap  = new ArrayList<Node>();
+		this.index = new HashMap<E, Integer>();
 	}
 	
 	@Override
-	/**
-	 * @return the comparator of the PriorityHeap
-	 */
-	public Comparator<P> comparator() {
-		return comparator;
+	public Comparator<? super P> comparator() {
+		return this.cmp;
 	}
 
-	/**
-	 * @return the size of the heap
-	 */
 	@Override
 	public int size() {
-		return data.size();
+		return this.heap.size();
 	}
 	
-	/** remove and return the largest element of this.
-	 * @throws NoSuchElementException if this is empty.
-	 */
+	@Override
+	public String toString() {
+		ArrayList<Node> result = new ArrayList<>(heap);
+		result.sort(Comparator.naturalOrder());
+		return result.toString();
+	}
+
 	@Override
 	public E poll() throws NoSuchElementException {
-		E maxEle = peek();
-		swap(0, size() - 1);
-		data.remove(size() - 1);
-		locationMap.remove(maxEle);
-		priorityMap.remove(size());
-		bubbleDown(0);
-		return maxEle;
-	}
-	
-	/**
-	 * return the largest element of this, according to comparator().
-	 * @throws NoSuchElementException if this is empty.
-	 */
-	@Override
-	public E peek() throws NoSuchElementException {
-		if(size() == 0)
+		if (size() == 0)
 			throw new NoSuchElementException();
 		
-		return data.get(0);
+		swap(0, size()-1);
+		E result = this.heap.remove(size()-1).value;
+		this.index.remove(result);
+		
+		bubbleDown(0);
+		
+		return result;
+	}
+
+	@Override
+	public E peek() throws NoSuchElementException {
+		if (this.size() == 0)
+			throw new NoSuchElementException();
+		return this.heap.get(0).value;
+	}
+
+	public P priority(E e) {
+		int i = this.index.get(e);
+		return heap.get(i).priority;
 	}
 	
 	@Override
 	public void add(E e, P p) throws IllegalArgumentException {
-		//throw if e is already contained.
-		if(locationMap.containsKey(e))
-			throw new IllegalArgumentException();
+		if (this.index.containsKey(e))
+			throw new IllegalArgumentException("Duplicate insertion into heap");
 
-		//int index = data.size();
-		data.add(e);
-		locationMap.put(e, data.indexOf(e));
-		priorityMap.put(data.indexOf(e), p);
-		bubbleUp(data.indexOf(e));
+		this.heap.add(new Node(e,p));
+		this.index.put(e, this.size()-1);
+		bubbleUp(this.size() - 1);
 	}
-	
-	/**
-	 * Note: Changed this method when debugging the Heap.
-	 * 
-	 * Change the priority associated with e to p.
-	 *
-	 * @throws NoSuchElementException if this does not contain e.
-	 */
+
 	@Override
 	public void changePriority(E e, P p) throws NoSuchElementException {
-		if(!(this.data.contains(e)))
-			throw new NoSuchElementException("ArrayList does not contain e.");
-		int index = locationMap.get(e);
-		//P prevPrio = priorityMap.get(index);
-		priorityMap.replace(index, p);
-		//if(comparator.compare(prevPrio, p)>0) {
-			bubbleUp(index);
-		//}
-		//else if(comparator.compare(prevPrio, p)<0) {
-			bubbleDown(index);
-		//}
+		int i = this.index.get(e);
+		this.heap.get(i).priority = p;
+		bubbleUp(i);
+		bubbleDown(i);
+	}
+
+	
+	// helper methods //////////////////////////////////////////////////////////
+	
+	/** return the index of the parent of the node at index i */
+	private int parent(int i) {
+		if (i <= 0)
+			return -1;
 		
+		return (i - 1)/2;
+	}
+	
+	/** return the index of the left of the node at index i */
+	private int left(int i) {
+		return 2*i + 1;
+	}
+	
+	/** return the index of the right of the node at index i */
+	private int right(int i) {
+		return 2*i + 2;
+	}
+	
+	/** swap the nodes at positions i and j, maintaining the index */
+	private void swap(int i, int j) {
+		Node entryi = this.heap.get(i);
+		Node entryj = this.heap.get(j);
+		
+		this.heap.set(i, entryj);
+		this.heap.set(j, entryi);
+		this.index.put(entryi.value, j);
+		this.index.put(entryj.value, i);
+	}
+	
+	private boolean hasLeft(int i) {
+		return left(i) < size();
+	}
+	
+	private boolean hasRight(int i) {
+		return right(i) < size();
+	}
+	
+	/** compare the priorities of nodes i and j.  indices with negative indices
+	 * are treated as infinitely large, while indices past the end of the heap
+	 * are treated as infinitely small. 
+	 * 
+	 * @return is < 0 if i < j, 0 if i = j, and > 0 if i > j 
+	 */
+	private int compare(int i, int j) {
+		if (i < 0 && j < 0)
+			return 0;
+		if (i < 0)
+			return 1;
+		if (j < 0)
+			return -1;
+		if (i >= size() && j >= size())
+			return 0;
+		if (i >= size())
+			return -1;
+		if (j >= size())
+			return 1;
+		
+		return cmp.compare(this.heap.get(i).priority, this.heap.get(j).priority);
 	}
 	
 	/**
-	 * make sure that the element at the given index satisfies the heap invariant
-	 * and check whether the element can rise to a lower level
-	 * @param index
+	 * Precondition: heap is a heap, except that node i might be larger than
+	 * its parent
+	 * 
+	 * Postcondition: heap is a heap.
 	 */
-	private void bubbleDown(int index) {
-		while(left(index) != -1 || right(index) != -1) {
-			int indexLeft = left(index);
-			int indexRight = right(index);
-			P curEle = priorityMap.get(index);
-			P eleLeft = priorityMap.get(indexLeft);
-			P eleRight = priorityMap.get(indexRight);
-			if((eleLeft != null && comparator.compare(curEle, eleLeft) < 0)
-					|| (eleRight != null && comparator.compare(curEle, eleRight) < 0)) {
-				if(eleLeft != null && (eleRight == null || comparator.compare(eleLeft, eleRight) > 0)) {
-					swap(index, indexLeft);
-					index = indexLeft;
-				}
-				else {
-					swap(index, indexRight);
-					index = indexRight;
-				}
-			}
-			else {
-				break;
-			}
+	private void bubbleUp(int i) {
+		// invariant: heap is a heap, except that node i might be larger than its parent
+		while (compare(i, parent(i)) > 0) {
+			swap(i, parent(i));
+			i = parent(i);
 		}
 	}
 	
 	/**
-	 * Note: Changed this method to debug Heap priority ordering.
+	 * Precondition: heap is a heap, except that node i might be smaller than
+	 * one of its children.
 	 * 
-	 * make sure that the element at the given index satisfies the heap invariant
-	 * and check whether the element can rise to an upper level
-	 * @param index
+	 * Postcondition: heap is a heap.
 	 */
-	private void bubbleUp(int index) {
-	
-		if (parent(index)!= -1) {
-			if(comparator().compare(priorityMap.get(index), priorityMap.get(parent(index))) > 0) {
-				swap(index, parent(index));
-				bubbleUp(parent(index));
-			}
+	private void bubbleDown(int i) {
+		// invariant: heap is a heap, except that node i might be less than one
+		// of its children.
+		while (compare(i,left(i)) < 0 || compare(i,right(i)) < 0) {
+			int k = compare(left(i), right(i)) > 0 ? left(i) : right(i);
+			swap(i,k);
+			i = k;
 		}
 	}
 	
-	/** returns depth of item at index i
-	 * 
-	 * @param i < data.size();
-	 * @return integer
-	 * @throws IndexOutOfBoundsException
-	 */
-	private int depth(int index) throws IndexOutOfBoundsException{
-		if(index > size())
-			throw new IndexOutOfBoundsException();
-		
-		return Integer.toBinaryString(index + 1).length();
+	// Testing /////////////////////////////////////////////////////////////////
+	
+	private void checkInvariants() {
+		assertEquals(heap.size(), index.size());
+		for (int i = 0; i < size(); i++)
+			assertTrue(compare(i,parent(i)) < 0);
+		for (E o : this.index.keySet())
+			assertEquals(o, this.heap.get(this.index.get(o)).value);
 	}
 	
-	/**
-	 * swap the elements at given indexes
-	 * @param a the index of the first element
-	 * @param b the index of the other element
-	 */
-	private void swap(int a, int b) {
-		E tempA = data.get(a);
-		E tempB = data.get(b);
-		P tempAPrior = priorityMap.get(a);
-		P tempBPrior = priorityMap.get(b);
-		//System.out.println("swap " + tempA + " with " + data.get(b));
-		priorityMap.replace(a, tempBPrior);
-		priorityMap.replace(b, tempAPrior);
-		locationMap.replace(tempA, b);
-		locationMap.replace(tempB, a);
-		data.set(a, tempB);
-		data.set(b, tempA);
-	}
-	
-	/** returns number of element at depth of item at index i
-	 * 
-	 * @param i < data.size()
-	 * @return -1 if the index is invalid
-	 */
-	private int noOfElements(int index){
-		return (int)(Math.pow(2, depth(index) - 1));
-	}
-	
-	/** returns index of left child of item at index i
-	 * 
-	 * @param i < data.size()
-	 * @return -1 if the index is invalid
-	 */
-	private int left(int index){
-		if(index < 0 || index >= size())
-			return -1;
-		
-		int temp = 2 * index + 1;
-		return (temp < size()) ? temp : -1;
-	}
-	
-	/** 
-	 * Note: Changed this method's structure when debugging the Heap.
-	 * 
-	 * returns index of right child of item at index i
-	 * 
-	 * @param i < data.size()
-	 * @return -1 if the index is invalid
-	 */ 
-	private int right(int index){
-		/*int temp = left(index);
-		if(temp == -1)
-			return temp;
-		
-		return (temp + 1 < size()) ? temp + 1 : -1;*/
-		if(index < 0 || index >= size())
-			return -1;
-		int temp = 2 * index + 2;
-		return (temp < size()) ? temp : -1;
-	}
-	
-	/** 
-	 * Note: Changed this method's structure when debugging the Heap.
-	 * 
-	 * returns the index of the parent of item at index i
-	 * 
-	 * @param i < data.size()
-	 * @return integer
-	 */
-	private int parent(int index) {
-		/*if(index >= 0 && index < size())
-			return (index - 1) / 2;
-		else
-			return -1;*/
-		if (index%2 != 0) {
-			if ((index - 1)/2 >= 0) {
-				return (index - 1)/2;
-			} else return -1;
-		} else if (index%2 == 0) {
-			if ((index - 2)/2 >= 0) {
-				return (index - 2)/2;
-			} else return -1;
-		} else return -1;
+	public static class Tests {
+
+		@Test
+		public void tests() {
+			Comparator<Integer> cmp = Comparator.naturalOrder();
+			Heap<String,Integer> h = new Heap<String,Integer>(cmp);
+			h.checkInvariants();
+			h.add("one", 1);
+			h.add("two", 2);
+			h.add("seven", 7);
+			h.checkInvariants();
+			assertEquals(3,h.size());
+			assertEquals("seven", h.peek());
+			assertEquals("seven", h.poll());
+			h.checkInvariants();
+			assertEquals("two", h.poll());
+			h.checkInvariants();
+			assertEquals("one", h.poll());
+			h.checkInvariants();
+			assertEquals(0, h.size());
+		}
 	}
 }

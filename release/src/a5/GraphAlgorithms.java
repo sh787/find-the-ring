@@ -1,8 +1,8 @@
 package a5;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
+
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -11,14 +11,11 @@ import java.util.Set;
 import java.util.Stack;
 
 import a4.Heap;
-import common.NotImplementedError;
 import graph.Edge;
+import graph.Graph;
 import graph.Node;
 import graph.LabeledEdge;
 
-
-/** We've provided depth-first search as an example; you need to implement Dijkstra's algorithm.
- */
 public class GraphAlgorithms  {
 	/** Return the Nodes reachable from start in depth-first-search order */
 	public static <N extends Node<N,E>, E extends Edge<N,E>>
@@ -45,6 +42,23 @@ public class GraphAlgorithms  {
 		return result;
 	}
 	
+	private static class Path<N,E> {
+		N           node;
+		Path<N,E>   parent;
+		int         distance;
+		boolean     settled;
+		
+		public Path(N current, Path<N,E> parent, int distance) {
+			this.node = current; this.parent = parent; this.distance = distance;
+		}
+		
+		public List<N> toList() {
+			List<N> rest = parent == null ? new ArrayList<>() : parent.toList();
+			rest.add(node);
+			return rest;
+		}
+	}
+	
 	/**
 	 * Return a minimal path from start to end.  This method should return as
 	 * soon as the shortest path to end is known; it should not continue to search
@@ -57,54 +71,43 @@ public class GraphAlgorithms  {
 	 */
 	public static <N extends Node<N,E>, E extends LabeledEdge<N,E,Integer>>
 	List<N> shortestPath(N start, N end) {
+		Heap<N,Integer>   worklist = new Heap<N,Integer>(Comparator.reverseOrder());
+		Map<N,Path<N,E>> distance  = new HashMap<>();
 		
-		Heap<N,Integer> worklist = new Heap<N,Integer>(Collections.reverseOrder());
-		worklist.add(start, 0);
-		Map <N, Integer> visitedEdges = new HashMap<N, Integer>();
-		Map <N, N> backPointers = new HashMap<N, N>();
-		List<N>  result   = new ArrayList<N>();
-		N trace = end;
+		worklist.add(start,0);
+		distance.put(start,new Path<N,E>(start,null,0));
 		
-		while (worklist.size() > 0) {
-			visitedEdges.put(worklist.peek(), worklist.getPriority(worklist.peek()));
-			N next = worklist.poll();
+		while(worklist.size() > 0) {
+			// invariants:
+			//   - distance[v] gives the shortest path to v passing only through
+			//     visited nodes
+			//   - distance[v] is defined for every node in the worklist and the
+			//     visited set
+			//   - the worklist's priority for v is equal to distance[v].distance
+			N         current  = worklist.poll();
+			Path<N,E> currPath = distance.get(current);
+			currPath.settled = true;
 			
-			if (next.equals(end)) {
-				result.add(trace);
-				
-				while (backPointers.get(trace) != null) {
-					result.add(0, backPointers.get(trace));
-					trace = backPointers.get(trace);
-				}
-				
-				if ((!start.equals(end)) && (!visitedEdges.containsKey(end))) {
-					return new ArrayList<N>();
-				}
-				
-				return result;
-			}
+			if (current.equals(end))
+				return currPath.toList();
 			
-			for (N neighbor : next.outgoing().keySet()) {
-				int p = visitedEdges.get(next) + next.outgoing().get(neighbor).label();
-				if (!visitedEdges.containsKey(neighbor)) {
-					if (worklist.contains(neighbor)) {
-						if (Collections.reverseOrder().compare(p, worklist.getPriority(neighbor)) > 0) {
-							worklist.changePriority(neighbor, p);
-							backPointers.put(neighbor, next);
-							
-						}
-					} else {
-						worklist.add(neighbor, p);
-						backPointers.put(neighbor, next);
-						
-					}
+			for(E e : current.outgoing().values()) {
+				int d = currPath.distance + e.label();
+				Path<N,E> oldPath = distance.get(e.target());
+				if (oldPath == null) {
+					worklist.add(e.target(), d);
+					distance.put(e.target(), new Path<>(e.target(), currPath, d));
+				} else if (oldPath.settled) {
+					continue;
+				}
+				else if (d < oldPath.distance) {
+					oldPath.parent   = currPath;
+					oldPath.distance = d;
+					worklist.changePriority(e.target(), d);
 				}
 			}
-			
 		}
-		
-		return result;
-		
+		return new ArrayList<>();
 	}
 	
 }
