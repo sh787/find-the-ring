@@ -44,6 +44,16 @@ public class DiverMin implements SewerDiver {
     throw new NotImplementedError();
 	}
 	
+	/* 
+	 * "Visit every node reachable along a path of unvisited nodes from node u."
+	 * "Precondition: u is not visited"
+	 * public static void dfs(Node u) {
+		Visit u;
+		for each neighbor w of u:
+ 		if (w is not visited) dfs(w);
+		}
+	 */
+	
 	/** Flee the sewer system before the steps are all used, trying to <br>
 	 * collect as many coins as possible along the way. Your solution must ALWAYS <br>
 	 * get out before the steps are all used, and this should be prioritized above<br>
