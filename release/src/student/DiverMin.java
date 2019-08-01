@@ -16,6 +16,8 @@ import game.Node;
 import common.NotImplementedError;
 
 public class DiverMin implements SewerDiver {
+	
+	
 
 	/** Get to the ring in as few steps as possible. Once you get there, <br>
 	 * you must return from this function in order to pick<br>
@@ -43,43 +45,39 @@ public class DiverMin implements SewerDiver {
 	 * Some modification is necessary to make the search better, in general. */
 	@Override
 	public void find(FindState state) {
-		dfs(state);
+		List<Long> visited = new ArrayList<Long>();
+		dfsWalk(state, visited);
+			
 	}
 	
-	
-	public static void dfs(FindState state) {
-		Stack<Long> worklist = new Stack<Long>();
-		ArrayList<Long> visited = new ArrayList<Long>();
-		
-		while (state.distanceToRing() != 0) {
-			worklist.add(state.currentLocation());
-			while (!(worklist.empty())) {
-				Long visit1 = worklist.pop();
-				visited.add(visit1);
-				
-				for (NodeStatus n: state.neighbors()) {
-					// if the space has not been visited
-					if ((worklist.search(n.getId()) == -1)) {
-						worklist.add(n.getId());
+	public static boolean dfsWalk(FindState state, List<Long> visited) {
+		if (state.distanceToRing() == 0) {
+			return true;
+		} else {
+			Long now = state.currentLocation();
+			visited.add(now);
+			for (NodeStatus n: state.neighbors()) {
+					if (!(visited.contains(n.getId()))) {
+						state.moveTo(n.getId());
+						if (state.distanceToRing() != 0) {
+							dfsWalk(state, visited);
+							if (state.distanceToRing() != 0) {
+								state.moveTo(now);
+							}
+							if (state.distanceToRing() == 0) {
+								return true;
+							}
+						}
 					}
-				}
-			}
-			for (Long v: visited) {
-			state.moveTo(v);
-			}
-		}
+					if (state.distanceToRing() == 0) {
+						return true;
+					}
 		
-	}
-	
-	/* 
-	 * "Visit every node reachable along a path of unvisited nodes from node u."
-	 * "Precondition: u is not visited"
-	 * public static void dfs(Node u) {
-		Visit u;
-		for each neighbor w of u:
- 		if (w is not visited) dfs(w);
+			}
+			return false;
 		}
-	 */
+	}
+		
 	
 	/** Flee the sewer system before the steps are all used, trying to <br>
 	 * collect as many coins as possible along the way. Your solution must ALWAYS <br>
