@@ -1,8 +1,10 @@
 package student;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.Stack;
 
 import a5.GraphAlgorithms;
 import game.FindState;
@@ -41,7 +43,29 @@ public class DiverMin implements SewerDiver {
 	 * Some modification is necessary to make the search better, in general. */
 	@Override
 	public void find(FindState state) {
-    throw new NotImplementedError();
+		dfs(state);
+	}
+	
+	
+	public static void dfs(FindState state) {
+		// while DiverMin is not on the ring
+		while (state.distanceToRing() != 0) {
+			Stack<Long> worklist = new Stack<Long>();
+			worklist.add(state.currentLocation());
+			ArrayList<Long> visited = new ArrayList<Long>();
+			while (!(worklist.empty())) {
+				Long visit1 = worklist.pop();
+				visited.add(visit1);
+				state.moveTo(visit1);
+				for (NodeStatus n: state.neighbors()) {
+					// if the space has not been visited
+					if ((worklist.search(n.getId()) == -1)) {
+						worklist.add(n.getId());
+					}
+				}
+			}
+		}
+		
 	}
 	
 	/* 
