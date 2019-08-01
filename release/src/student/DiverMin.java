@@ -48,21 +48,24 @@ public class DiverMin implements SewerDiver {
 	
 	
 	public static void dfs(FindState state) {
-		// while DiverMin is not on the ring
+		Stack<Long> worklist = new Stack<Long>();
+		ArrayList<Long> visited = new ArrayList<Long>();
+		
 		while (state.distanceToRing() != 0) {
-			Stack<Long> worklist = new Stack<Long>();
 			worklist.add(state.currentLocation());
-			ArrayList<Long> visited = new ArrayList<Long>();
 			while (!(worklist.empty())) {
 				Long visit1 = worklist.pop();
 				visited.add(visit1);
-				state.moveTo(visit1);
+				
 				for (NodeStatus n: state.neighbors()) {
 					// if the space has not been visited
 					if ((worklist.search(n.getId()) == -1)) {
 						worklist.add(n.getId());
 					}
 				}
+			}
+			for (Long v: visited) {
+			state.moveTo(v);
 			}
 		}
 		
