@@ -46,10 +46,45 @@ public class DiverMin implements SewerDiver {
 	@Override
 	public void find(FindState state) {
 		List<Long> visited = new ArrayList<Long>();
-		dfsWalk(state, visited);
+		walk2(state, visited);
 			
 	}
 	
+	public static boolean walk2(FindState state, List<Long> visited) {
+		if (state.distanceToRing() == 0) {
+			return true;
+		} else {
+			Long now = state.currentLocation();
+			visited.add(now);
+			for (NodeStatus n: state.neighbors()) {
+				int nNow = n.getDistanceToTarget();
+				NodeStatus nodeNow = n;
+				for (NodeStatus n2: state.neighbors()) {
+					if ((n2.getDistanceToTarget() < nNow) && (!(visited.contains(n2.getId())))) {
+						nNow = n2.getDistanceToTarget();
+						nodeNow = n2;
+					}
+				}
+				if ((state.distanceToRing() != 0) && (!(visited.contains(n.getId())))) {
+					state.moveTo(nodeNow.getId());
+					if (state.distanceToRing() != 0) {
+						walk2(state, visited);
+					}
+					if (state.distanceToRing() != 0) {
+						state.moveTo(now);
+					}
+					if (state.distanceToRing() == 0) {
+						return true;
+					}
+				}
+			} return false;
+		}
+	}
+	
+	
+	
+	
+	// this is a previous implementation of find, which is less efficient
 	public static boolean dfsWalk(FindState state, List<Long> visited) {
 		if (state.distanceToRing() == 0) {
 			return true;
