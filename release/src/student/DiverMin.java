@@ -11,6 +11,7 @@ import game.FindState;
 import game.FleeState;
 import game.NodeStatus;
 import game.SewerDiver;
+import graph.LabeledEdge;
 import game.Node;
 
 import common.NotImplementedError;
@@ -138,8 +139,8 @@ public class DiverMin implements SewerDiver {
 	 * exit using the shortest path, although this will not collect many coins.<br>
 	 * For this reason, a good starting solution is to use the shortest path to<br>
 	 * the exit. */
-	@Override
-	public void flee(FleeState state) {
+
+	/*public void flee(FleeState state) {
 		List<Node> sPath = a5.GraphAlgorithms.shortestPath(state.currentNode(), state.getExit());
 		boolean flag =false; 
 		for (Node n: sPath) {
@@ -150,5 +151,59 @@ public class DiverMin implements SewerDiver {
 			}
 		}
 	}
-
+	*/
+	
+	@Override
+	public void flee(FleeState state) {
+		//List<Node> dfsPath = a5.GraphAlgorithms.dfs(state.currentNode());
+		//int counter = 1;
+		List <Node> visited = new ArrayList<Node> ();
+		dfs2(state, visited);
+		
+	}
+	
+	/*
+	public void bestPath(FleeState state, List<Node> dfs, int counter) {
+		int sPathSize = a5.GraphAlgorithms.shortestPath(state.currentNode(), state.getExit()).size();
+		Node n = dfs.get(counter);
+		if ( (state.stepsLeft() > sPathSize) && (counter < dfs.size())) {
+			state.moveTo(n);
+			bestPath(state, dfs, counter + 1);
+			//sPathSize = a5.GraphAlgorithms.shortestPath(state.currentNode(), state.getExit()).size();
+		} 
+		
+	}
+	*/
+	
+	public static void dfs2(FleeState state, List<Node> visited) {
+		int sPathSize = a5.GraphAlgorithms.shortestPath(state.currentNode(), state.getExit()).size();
+		Node now = state.currentNode();
+		visited.add(now);
+		while (state.stepsLeft() > sPathSize) {
+			for (Node n: now.getNeighbors()) {
+					if (!(visited.contains(n))) {
+						state.moveTo(n);
+						sPathSize = a5.GraphAlgorithms.shortestPath(state.currentNode(), state.getExit()).size();
+						if (!state.currentNode().equals(state.getExit())) {
+							dfs2(state, visited);
+							if (!state.currentNode().equals(state.getExit())) {
+								state.moveTo(now);
+								sPathSize = a5.GraphAlgorithms.shortestPath(state.currentNode(), state.getExit()).size();
+							}
+						}
+						
+					}
+			}
+		
+			List<Node> sPath = a5.GraphAlgorithms.shortestPath(state.currentNode(), state.getExit());
+			boolean flag =false; 
+			for (Node n: sPath) {
+				if (flag == true ) {
+					state.moveTo(n);
+				} else {
+					flag = true;
+				}
+			}
+		}
+	}
 }
