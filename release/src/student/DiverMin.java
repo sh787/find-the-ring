@@ -1,11 +1,15 @@
 package student;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
 
+import a4.Heap;
 import a5.GraphAlgorithms;
 import game.FindState;
 import game.FleeState;
@@ -13,6 +17,7 @@ import game.NodeStatus;
 import game.SewerDiver;
 import graph.LabeledEdge;
 import game.Node;
+
 
 import common.NotImplementedError;
 
@@ -50,7 +55,14 @@ public class DiverMin implements SewerDiver {
 		findRing(state, visited);
 			
 	}
-	
+	/** This is a helper method of find. This method looks at each neighbor of the current position,
+	 * 	and moves to the neighbor of which the distance to the ring is smallest. In this way,
+	 * 	it may find the ring more efficiently than a simple depth-first search.
+	 * 
+	 * @param state
+	 * @param visited
+	 * @return
+	 */
 	public static boolean findRing(FindState state, List<Long> visited) {
 		if (state.distanceToRing() == 0) {
 			return true;
@@ -84,6 +96,8 @@ public class DiverMin implements SewerDiver {
 			return false;
 		}
 	}
+	
+	
 	
 	/** This is a previous implementation of find (to be called as a helper method), 
 	 * which is less efficient. It uses depth-first search to find the ring.
