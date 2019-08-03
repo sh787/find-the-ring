@@ -47,45 +47,51 @@ public class DiverMin implements SewerDiver {
 	@Override
 	public void find(FindState state) {
 		List<Long> visited = new ArrayList<Long>();
-		walk2(state, visited);
+		findRing(state, visited);
 			
 	}
 	
-	public static boolean walk2(FindState state, List<Long> visited) {
+	public static boolean findRing(FindState state, List<Long> visited) {
 		if (state.distanceToRing() == 0) {
 			return true;
 		} else {
 			Long now = state.currentLocation();
 			visited.add(now);
 			for (NodeStatus n: state.neighbors()) {
-				int nNow = n.getDistanceToTarget();
-				NodeStatus nodeNow = n;
-				for (NodeStatus n2: state.neighbors()) {
-					if ((n2.getDistanceToTarget() < nNow) && (!(visited.contains(n2.getId())))) {
-						nNow = n2.getDistanceToTarget();
-						nodeNow = n2;
+				if (!(visited.contains(n.getId()))) {
+					int nNow = n.getDistanceToTarget();
+					NodeStatus nodeNow = n;
+					for (NodeStatus n2: state.neighbors()) {
+						if ((n2.getDistanceToTarget() < nNow) && (!(visited.contains(n2.getId())))) {
+							nNow = n2.getDistanceToTarget();
+							nodeNow = n2;
+						}
 					}
+					if ((!(visited.contains(nodeNow.getId())))) {
+						state.moveTo(nodeNow.getId());
+						if (state.distanceToRing() != 0) {
+							findRing(state, visited);
+						}
+						if (state.distanceToRing() != 0) {
+							state.moveTo(now);
+						}
+						if (state.distanceToRing() == 0) {
+							return true;
+						}
+					}	
 				}
-				if ((state.distanceToRing() != 0) && (!(visited.contains(n.getId())))) {
-					state.moveTo(nodeNow.getId());
-					if (state.distanceToRing() != 0) {
-						walk2(state, visited);
-					}
-					if (state.distanceToRing() != 0) {
-						state.moveTo(now);
-					}
-					if (state.distanceToRing() == 0) {
-						return true;
-					}
-				}
-			} return false;
+			} 
+			return false;
 		}
 	}
 	
-	
-	
-	
-	// this is a previous implementation of find, which is less efficient
+	/** This is a previous implementation of find (to be called as a helper method), 
+	 * which is less efficient. It uses depth-first search to find the ring.
+	 * 
+	 * @param state
+	 * @param visited
+	 * @return
+	 */
 	public static boolean dfsWalk(FindState state, List<Long> visited) {
 		if (state.distanceToRing() == 0) {
 			return true;
