@@ -52,7 +52,8 @@ public class DiverMin implements SewerDiver {
 	@Override
 	public void find(FindState state) {
 		List<Long> visited = new ArrayList<Long>();
-		findRing(state, visited);
+		Long start = state.currentLocation();
+		findRing(state, visited, start);
 			
 	}
 	/** This is a helper method of find. This method looks at each neighbor of the current position,
@@ -63,7 +64,7 @@ public class DiverMin implements SewerDiver {
 	 * @param visited
 	 * @return
 	 */
-	public static boolean findRing(FindState state, List<Long> visited) {
+	public static boolean findRing(FindState state, List<Long> visited, Long start) {
 		if (state.distanceToRing() == 0) {
 			return true;
 		} else {
@@ -79,12 +80,12 @@ public class DiverMin implements SewerDiver {
 							nodeNow = n2;
 						}
 					}
-					if ((!(visited.contains(nodeNow.getId())))) {
+					if (!(visited.contains(nodeNow.getId())) && !nodeNow.equals(start)) {
 						state.moveTo(nodeNow.getId());
 						if (state.distanceToRing() != 0) {
-							findRing(state, visited);
+							findRing(state, visited, start);
 						}
-						if (state.distanceToRing() != 0) {
+						if (state.distanceToRing() != 0 && !now.equals(start)) {
 							state.moveTo(now);
 						}
 						if (state.distanceToRing() == 0) {
